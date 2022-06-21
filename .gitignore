@@ -1,0 +1,4 @@
+.environment
+
+*.db
+*.csv
