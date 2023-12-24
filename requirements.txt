@@ -2,4 +2,4 @@ fastapi[all]
 uvicorn
 sqlalchemy
 psycopg2
-dotenv
+python-dotenv
