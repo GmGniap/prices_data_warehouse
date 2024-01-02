@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 from api_app.db_manager import DbManager
 from api_app import crud, models, schemas
+from datetime import datetime, date
 
 dbManager = DbManager()
 
@@ -41,7 +42,7 @@ def get_db():
     finally:
         db.close()
 
-
+## Input Model = Request Body ['publisher'] == 'GreenWay , Output Model = Response Body == 'GreenWayBase'
 @app.get("/greenway/records/{id}", response_model=schemas.GreenwayBase)
 def read_greenway_record_by_id(id: int, db: Session = Depends(get_db)):
     gw_data = crud.get_greenway_first_record(db, id)
@@ -56,3 +57,8 @@ async def read_greenway_records_limit(
 ):
     records = crud.get_greenway_items_with_limit(db, skip=skip, limit=limit)
     return records
+
+def read_greenway_by_time(
+    from_date: datetime = date(2016,3,1), 
+    to_date: datetime = date(2023, 12, 1),):
+    

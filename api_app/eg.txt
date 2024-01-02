@@ -1,0 +1,66 @@
+base model which contains common attributes such as Category, Name, Effective From, Effective To 
+
+## Petroleum 
+class BaseModel:
+    category: string
+    name: string
+    effectiveFrom: date
+    effectiveTo: date
+    location: str
+
+
+class PublisherOne extends BaseModel:
+    state:
+
+
+class PublisherTwo extends BasedModel:
+    station_name:
+    station_township: 
+
+
+class PublisherThree:
+
+
+
+class PublisherFour: 
+
+
+
+
+Index ---> 
+   id
+   col1
+   col2  
+   col3 
+
+
+Index 
+
+
+
+Database
+
+- Dev (cloud --> testing) myPricedev/....
+    - PriceGodDB
+        - Schema 1 : raw
+            -table1
+            -table2
+            -table3 - [adding new columns]
+            -(table4) [New table]
+        - Schema 2 : staging 
+            - table1 (clean result from raw table1)
+            - table2 
+        
+        - Schema 4 : Final (Ralationl Database)
+            - table1 (final)
+
+
+        [Migration Changes]
+
+- Prod (cloud --> go live) myPriveprd/....
+    - PriceGodDB
+        - Schema 4 :
+            -table1 (final)
+            -table2
+            -table3
+

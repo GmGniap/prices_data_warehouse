@@ -61,7 +61,7 @@ def scrape_historical_data(dbManager):
 def main():
     ## Work with Postgres
     dbManager = DbManager()
-    dbManager.reset_tables()  ## Reset tables
+    # dbManager.reset_tables()  ## Reset tables
 
     scrape_historical_data(dbManager)
     print("Successfully finished!")

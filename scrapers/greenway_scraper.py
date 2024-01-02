@@ -2,62 +2,94 @@ import requests
 import pandas as pd
 from datetime import date, datetime, timedelta
 from typing import List, Dict
-
-# def get_pagination_info(url):
-#     r = requests.get(url)
-#     if r.status_code != 200:
-#         raise requests.ConnectionError()
-#     pagination_info = r.json()["pagination"]
-#     return pagination_info
-
-
-def get_single_page_data(url):
-    r = requests.get(url)
-    if r.status_code != 200:
-        raise requests.ConnectionError()
-    pagination_info = r.json()["pagination"]
-    data = r.json()["data"]
-    return pagination_info, data
+from api_app.db_manager import DbManager
+from . import Scraper
+from api_app.models import GreenWay
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import func
 
 
-def get_data_from_specific_date(selected_date: str) -> List:
-    data = []
-    ## page number should be start from 1 , even though page 1 is the same as page 0
-    pg_num = 1
-    last_page_no = 1000  ## init impossible number that used to enter while loop
+class GreenWayScraper(Scraper):
+    def __init__(self):
+        self.dbManager = DbManager()
+        self.pagination_info = None
+        self.data = None
+        print("GreenWay Scraper started!")
 
-    while pg_num < last_page_no + 1:
-        if pg_num == 1:
-            # print(f"First Page Num : {pg_num} & Last : {last_page_no}")
-            daily_price_url = f"https://greenwaymyanmar.com/api/web/market-price?page={pg_num}&tab_date={selected_date}"
-            pagination, single_pg_data = get_single_page_data(daily_price_url)
-            if pagination["total"] == 0:
-                print(f"Total is being zero : {pagination['total']}")
+    def update_url(self, page_number, selected_date):
+        return f"https://greenwaymyanmar.com/api/web/market-price?page={page_number}&tab_date={selected_date}"
+
+    def get_single_page_data(self, url):
+        r = requests.get(url)
+        if r.status_code != 200:
+            raise requests.ConnectionError()
+        if self.pagination_info is None:
+            self.pagination_info = r.json()["pagination"]
+        self.data = r.json()["data"]
+        return self.pagination_info, self.data
+
+    def get_data_from_specific_date(self, selected_date: str):
+        all_pages_data = []
+        ## page number should be start from 1 , even though page 1 is the same as page 0
+        pg_num = 1
+        last_page_no = 1000  ## init impossible number that used to enter while loop
+
+        while pg_num < last_page_no + 1:
+            daily_price_url = self.update_url(pg_num, selected_date)
+            self.get_single_page_data(daily_price_url)
+            if self.pagination_info["total"] == 0:
+                print(f"Total is being zero : {self.pagination_info['total']}")
                 return None, {}
-            last_page_no = int(pagination["last_page"])
-            data += single_pg_data
-            pg_num += 1
-            continue
-
-        # print(f"After break : Page Num : {pg_num} & Last : {last_page_no}")
-        if pagination["total"] > 0:
-            daily_price_url = f"https://greenwaymyanmar.com/api/web/market-price?page={pg_num}&tab_date={selected_date}"
-            _, single_pg_data = get_single_page_data(daily_price_url)
-            if len(single_pg_data) > 0:
-                data += single_pg_data
+            last_page_no = int(self.pagination_info["last_page"])
+            if len(self.data) > 0:
+                all_pages_data += self.data
             else:
                 print("Single Page data is being None")
                 raise ValueError("Data is none")
             pg_num += 1
 
-    if len(data) != int(pagination["total"]):
-        ## Should add to Logging
-        print("Total scraped data isn't equal with info")
+        if len(all_pages_data) != int(self.pagination_info["total"]):
+            ## Should add to Logging
+            print("Total scraped data isn't equal with info")
 
-    summary_data = {
-        "total_rows": pagination["total"],
-        "total_cols": len(single_pg_data[0].keys()),
-        "last_scraped_url": daily_price_url,
-    }
+        summary_data = {
+            "total_rows": self.pagination_info["total"],
+            "total_cols": len(self.data[0].keys()),
+            "last_scraped_url": daily_price_url,
+        }
 
-    return data, summary_data
+        return all_pages_data, summary_data
+
+    def scrape_update_daily_data(self):
+        try:
+            today_date = datetime.now().date().strftime("%Y-%m-%d")
+            ## Scrape data for specific date
+            data, summary = self.get_data_from_specific_date(today_date)
+
+            ## summary is being heavy dependent on scraper script
+            summary["dataset_name"] = "Green Way Myanmar"
+            summary["scraped_date"] = today_date
+            if data:
+                # self.dbManager.insert_batch("greenway_db", data)
+                print(f"Insert here! {data}")
+                summary["status"] = "success"
+            else:
+                summary["status"] = "no-data"
+                print("Result data from specific date is being None")
+            self.dbManager.insert_batch("summary", [summary])
+        except ValueError as e:
+            print(f"VE : {e}")
+            summary["status"] = "fail"
+
+    def validate_before_update(self):
+        engine = self.dbManager.get_engine()
+        
+        sub_query = select(func.max(GreenWay.id)).scalar_subquery()
+        # print(sub_query)
+        stmt = select(GreenWay).where(GreenWay.id == sub_query)
+        with Session(engine) as session:
+            data = session.scalars(stmt).first()
+            # print(data)
+            print(vars(data))
+        

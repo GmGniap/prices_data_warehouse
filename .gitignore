@@ -5,13 +5,17 @@
 *.twbx
 *.xlsx
 *.xml
-*.txt
 
 *.DS_Store
+airflow.sh 
+docker-compose.yaml
+Dockerfile
 
 # Ignore folders
 environment/
 dbs/
+backup/
+dags/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,5 +1,12 @@
 fastapi[all]
 uvicorn
 sqlalchemy
-psycopg2
+psycopg2-binary
 python-dotenv
+requests
+pandas
+beautifulsoup4
+dbt-postgres
+lxml
+html5lib
+requests-html

@@ -8,3 +8,7 @@ def get_greenway_first_record(db: Session, id: int):
 
 def get_greenway_items_with_limit(db: Session, skip: int = 0, limit: int = 50):
     return db.query(models.GreenWay).offset(skip).limit(limit).all()
+
+
+def get_greenway_by_date(db: Session, from_date, to_date):
+    pass

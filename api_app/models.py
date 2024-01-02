@@ -2,14 +2,14 @@ from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 
 from datetime import datetime
-
+from constants import GREENWAY_DB, WISARRA_DB
 
 class Base(DeclarativeBase):
     pass
 
 
 class GreenWay(Base):
-    __tablename__ = "greenway_db"
+    __tablename__ = GREENWAY_DB
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     crop: Mapped[str] = mapped_column(String, nullable=False)
@@ -40,3 +40,17 @@ class SummaryInfo(Base):
     total_rows: Mapped[int] = mapped_column(Integer, nullable=True)
     total_cols: Mapped[int] = mapped_column(Integer, nullable=True)
     last_scraped_url: Mapped[str] = mapped_column(String, nullable=True)
+
+
+class Wisarra(Base):
+    __tablename__ = WISARRA_DB
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str]
+    location: Mapped[str]
+    marketplace: Mapped[str]
+    min_price: Mapped[int] = mapped_column(Integer, nullable=True)
+    max_price: Mapped[int] = mapped_column(Integer, nullable=True)
+    currency: Mapped[str]
+    quantity: Mapped[float]
+    unit: Mapped[str]
+    page_date : Mapped[datetime] = mapped_column(DateTime, nullable=True)
