@@ -4,6 +4,7 @@ from api_app.db_manager import DbManager
 import numpy as np
 from requests_html import HTMLSession
 from datetime import datetime
+from constants import WISARRA_DB
 
 ## Need to ignore ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -77,6 +78,8 @@ class WisarraScraper:
             ["min_price", "max_price", "quantity"]
         ].apply(pd.to_numeric, errors="coerce")
 
+        ## scrape page date
+        df['page_date'] = self.scrape_date()
         # print(df.dtypes)
         return df
 
@@ -92,7 +95,7 @@ class WisarraScraper:
             ## Update to Postgresql
             engine = self.dbManager.get_engine()
             wisarra.to_sql(
-                "wisarra_db", engine, if_exists="append", index=False, method="multi"
+                WISARRA_DB , engine, if_exists="append", index=False, method="multi"
             )
             print("Finish insertion.")
             return 200

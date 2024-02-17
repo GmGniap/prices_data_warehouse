@@ -29,6 +29,9 @@ class GreenWay(Base):
 
     def __str__(self):
         return f"{self.id}:{self.crop}-{self.price}"
+    
+    def convert_dict(self):
+        return self.__dict__
 
 
 class SummaryInfo(Base):

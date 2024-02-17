@@ -15,8 +15,9 @@ class GreenWayScraper(Scraper):
         self.dbManager = DbManager()
         self.pagination_info = None
         self.data = None
+        self.today_date = datetime.now().date().strftime("%Y-%m-%d")
         print("GreenWay Scraper started!")
-
+        
     def update_url(self, page_number, selected_date):
         return f"https://greenwaymyanmar.com/api/web/market-price?page={page_number}&tab_date={selected_date}"
 
@@ -63,13 +64,12 @@ class GreenWayScraper(Scraper):
 
     def scrape_update_daily_data(self):
         try:
-            today_date = datetime.now().date().strftime("%Y-%m-%d")
             ## Scrape data for specific date
-            data, summary = self.get_data_from_specific_date(today_date)
+            data, summary = self.get_data_from_specific_date(self.today_date)
 
             ## summary is being heavy dependent on scraper script
             summary["dataset_name"] = "Green Way Myanmar"
-            summary["scraped_date"] = today_date
+            summary["scraped_date"] = self.today_date
             if data:
                 # self.dbManager.insert_batch("greenway_db", data)
                 print(f"Insert here! {data}")
@@ -82,14 +82,28 @@ class GreenWayScraper(Scraper):
             print(f"VE : {e}")
             summary["status"] = "fail"
 
-    def validate_before_update(self):
+    def get_lastRowData_from_db(self):
+        """
+        Get the last row (with max id number) and covert to dictionary
+        """
         engine = self.dbManager.get_engine()
         
-        sub_query = select(func.max(GreenWay.id)).scalar_subquery()
+        # sub_query = select(func.max(GreenWay.id)).scalar_subquery() #  scalar
+        sub_query = select(func.max(GreenWay.id)).subquery() ## with normal execute
         # print(sub_query)
         stmt = select(GreenWay).where(GreenWay.id == sub_query)
         with Session(engine) as session:
-            data = session.scalars(stmt).first()
-            # print(data)
-            print(vars(data))
+            # data = session.scalars(stmt).first()
+            data = session.execute(stmt).first()
+
+            ## convert to dict
+            return data._asdict()['GreenWay'].convert_dict()
+            
+            
+            
+            # print(vars(data))
+    
+    def validate_before_update(self):
+        ## get & compare with today scraped data - first row
+        
         

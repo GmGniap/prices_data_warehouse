@@ -1,7 +1,7 @@
 from config import Config
-from typing import Any
+from typing import Any, List
 from sqlalchemy import column, select, insert, text
-from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy import create_engine, Table, MetaData, inspect
 from sqlalchemy.orm import Session, sessionmaker
 
 from api_app.models import Base
@@ -27,6 +27,10 @@ class DbManager:
         self.create_tables()
         print("Resetting tables - Done!")
 
+    def get_all_table_names(self) -> List:
+        inspector = inspect(self.engine)
+        return inspector.get_table_names()
+    
     def get_engine(self):
         return self.engine
 
