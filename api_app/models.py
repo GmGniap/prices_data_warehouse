@@ -7,7 +7,6 @@ from constants import GREENWAY_DB, WISARRA_DB
 class Base(DeclarativeBase):
     pass
 
-
 class GreenWay(Base):
     __tablename__ = GREENWAY_DB
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -57,3 +56,8 @@ class Wisarra(Base):
     quantity: Mapped[float]
     unit: Mapped[str]
     page_date : Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    
+    ## Ref - https://stackoverflow.com/questions/10467199/the-pythonic-way-to-handle-sqlalchemy-models?rq=4
+    @classmethod
+    def get_by_id(cls, dbsession, filter_id):
+        return dbsession.query(cls).filter(cls.id == filter_id).scalar()

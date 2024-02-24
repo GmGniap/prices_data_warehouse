@@ -12,9 +12,7 @@ class CityMallScraper:
              'Cookie' : '_citymallLanguageCookie=en'
              }
         )
-        
         self.data = []
-    
         ## Scraping Initial url for one time
         self.r = self.session.get(self.url)
         print(f"Scrape initial url : {self.url}")
@@ -25,35 +23,43 @@ class CityMallScraper:
             return f"https://www.citymall.com.mm{str(list(next_link)[0])}"
         print(f"Next link not found : {next_button.attrs['href']}")
         return None
-        
-    def scrape_all_items(self):
-        items = self.r.html.find('.col-xs-6.col-lg-2.col-md-4.col-sm-4.pt-2.gutter-2.p-1')
-        print(len(items))
-        for item in items:
-            item_dict = {}
-            ## find required data for each item
-            item_dict['image_url'] = item.find('.product.img-responsive', first=True).attrs['src']
-            
-            if check_title := item.find('.product-title', first=True):
+    
+    ## Scrape single item data - Need to check some items had special information (like promotion)
+    def scrape_item_data_as_dict(self, item) -> dict:
+        ## find required data for each item
+        item_dict = {
+            'image_url' : item.find('.product.img-responsive', first=True).attrs['src']
+        }
+        if check_title := item.find('.product-title', first=True):
                 item_dict['product_name'] = check_title.find('.name', first=True).text
                 item_dict['product_url'] = check_title.find('a', first=True).attrs['href']
             
-            if check_price := item.find('.product-price.mt-1', first=True):
-                ## if found two span elements , it will be promotional item
-                if len(check_price.find('span')) >= 2:  
-                    item_dict['product_sale_price'] = check_price.find('.product-sale-price', first=True).text
-                    item_dict['product_original_price'] = check_price.find('.product-original-price', first=True).text
-                ## else, it's normal price
-                else:
-                    item_dict['product_price'] = check_price.text
-                    
-            item_dict['product_seller'] = item.find('.product-seller', first=True).find('span', first=True).text
-            
-            if check_packaging := item.find('.product-packaging', first=True):
-                item_dict['product_packaging'] = check_packaging.text
-            self.data.append(item_dict)
+        if check_price := item.find('.product-price.mt-1', first=True):
+            ## if found two span elements , it will be promotional item
+            if len(check_price.find('span')) >= 2:  
+                item_dict['product_sale_price'] = check_price.find('.product-sale-price', first=True).text
+                item_dict['product_original_price'] = check_price.find('.product-original-price', first=True).text
+            ## else, it's normal price
+            else:
+                item_dict['product_price'] = check_price.text
+                
+        item_dict['product_seller'] = item.find('.product-seller', first=True).find('span', first=True).text
+        
+        if check_packaging := item.find('.product-packaging', first=True):
+            item_dict['product_packaging'] = check_packaging.text
+        return item_dict
     
-    def scrape_item(self, item)
+    ## Scrape all items from one page, return List of Dictionaries
+    def scrape_all_items(self):
+        items = self.r.html.find('.col-xs-6.col-lg-2.col-md-4.col-sm-4.pt-2.gutter-2.p-1')
+        print(f"No. of items : {len(items)}")
+        for item in items:
+            item_data = self.scrape_item_data_as_dict(item)
+            
+            ## current scraping url for each item? -> to get page number , category
+            
+            self.data.append(item_data)
+        return self.data
     
     ## Iterate scrape function inside object using iter() and next() magic methods
     def iterate_scrape_func(self, update_url):
@@ -62,7 +68,6 @@ class CityMallScraper:
         
     ## Only return iterable object (self)
     def __iter__(self):
-        # print(f"Iter-Check Next button : {self.next_button}")
         return self
     
     ## Next object
@@ -70,7 +75,6 @@ class CityMallScraper:
         ## get next_button url
         self.next_button = self.scrape_next_url()
         if self.next_button:
-            # print(f"Next scraping link is - {self.next_button}")
             # return self.scrape_new_url(self.next_button)  ## Not working with classmethod
             return self.iterate_scrape_func(self.next_button)
         raise StopIteration
@@ -93,12 +97,14 @@ url_test = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Gro
 cm = CityMallScraper(url_test)
 # next_but = cm.scrape_next_url()
 # print(next_but)
-# items = cm.scrape_items()
-
 
 ## Test iterating
-# print("Start iterating---")
-# for count, i in enumerate(cm, start=1):
-#     print(f"Done scraping for count {count}\n")
-# print("Finished!")
+print("Start iterating---")
+final_data = []
+for count, i in enumerate(cm, start=1):
+    items = cm.scrape_all_items()
+    final_data += items
+    print(len(items))
+    print(f"Done scraping for count {count}\n")
+print("Finished!")
      
