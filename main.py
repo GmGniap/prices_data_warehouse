@@ -14,7 +14,6 @@ shapes = [
     {"item": "Rectangle", "number": 4, "id": 3},
 ]
 
-
 @app.get("/")
 async def root():
     return {"message": "Hello FastAPI"}

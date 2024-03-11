@@ -9,7 +9,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 
-
 class GreenWayScraper(Scraper):
     def __init__(self):
         self.dbManager = DbManager()
@@ -105,5 +104,6 @@ class GreenWayScraper(Scraper):
     
     def validate_before_update(self):
         ## get & compare with today scraped data - first row
+        pass
         
         
