@@ -10,6 +10,5 @@ daily_price_url = (
 
 def test_single_page_data():
     test_df = get_df_from_single_page(daily_price_url)
-
     ## Number of Columns must be 16 cols
     assert test_df.shape[1] == 16

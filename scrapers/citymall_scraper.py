@@ -2,7 +2,6 @@ from requests_html import HTMLSession
 from typing import List, Dict
 import json
 import re
-from random import randint
 
 en_cache_header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0',
              'Cookie' : '_citymallLanguageCookie=en'
@@ -112,8 +111,7 @@ class CityMallCategoryScraper:
         )
         self.all_category_lst = []
         self.r = self.main_session.get(self.main_url)
-        print(f"Scraping status for category url : {self.r.status_code}")
-        
+        # print(f"Scraping status for category url : {self.r.status_code}") 
         ## Start scraping categories (main + sub)
         self.scrape_main_category()
     
@@ -121,19 +119,19 @@ class CityMallCategoryScraper:
         
         ## Using xpath to select all categories
         all_category_boxes = self.r.html.xpath("//div[contains(@id, 'dep-')]")
-        for category in all_category_boxes:
+        for index, category in enumerate(all_category_boxes):
             ## select category title & url under selected class
             category_dict = {
                 'category_title' : category.find(".text-center-xs-sm > p", first=True).text
             }
-            print(f"Scraping Main Category : {category_dict['category_title']}")
+            # print(f"Scraping Main Category : {category_dict['category_title']}")
             category_dict['category_url'] = citymall_baseURL + category.find(".text-center-xs-sm > a", first=True).attrs['href']
             if check_id := re.search(r"\/(\w+)$", category_dict['category_url']):
                 category_dict['category_id'] = check_id[1]
             else:
                 ## one main category doesn't have correct url with digits, set as main-unknown 'MU000'
                 # print(f"Main category unknown url : {category_dict['category_url']}")
-                category_dict['category_id'] = f'MU_{randint(0,100):03d}_' + category_dict['category_title'][:2].upper()
+                category_dict['category_id'] = f'MU_{index:02d}_' + category_dict['category_title'][:2].upper()
             category_dict['sub_categories'] = self.scrape_sub_category(category)
             self.all_category_lst.append(category_dict)
         # print(f"All category length : {len(all_category_lst)}")
@@ -149,7 +147,7 @@ class CityMallCategoryScraper:
             # print("Sub-category list is being zero.")
             return []
         sub_category_lst = []
-        for sub_category in sub_category_rows:
+        for sub_index, sub_category in enumerate(sub_category_rows):
             sub_category_dict = {
                 'sub_category_title' : sub_category.find('a', first=True).text
                 }
@@ -160,13 +158,24 @@ class CityMallCategoryScraper:
                 sub_category_dict['sub_category_id'] = check_sub_id[1]
             else:
                 ## Unknown digits - set as sub-unknown 'SU000'
-                print(f"Unknown digits from sub {sub_category_dict['sub_category_title']} : {sub_category_dict['sub_category_url']}")
-                sub_category_dict['sub_category_id'] = f'SU_{randint(0,100):03d}_' + sub_category_dict['sub_category_title'][:2].upper()
+                # print(f"Unknown sub- {sub_category_dict['sub_category_title']} url: {sub_category_dict['sub_category_url']}")
+                sub_category_dict['sub_category_id'] = f'SU_{sub_index:03d}_' + sub_category_dict['sub_category_title'][:2].upper()
             sub_category_lst.append(sub_category_dict)
         return sub_category_lst
     
-    def get_all_category_titles(self):
-        pass
+    def get_main_category_ids(self):
+        return [{category['category_id'] : category['category_title']} for category in self.all_category_lst]
+    
+    def get_all_sub_category_ids(self):
+        return [{sub_category['sub_category_id'] : sub_category['sub_category_title']} for category in self.all_category_lst for sub_category in category['sub_categories']]
+    
+    def get_sub_ids_under_main(self, main_category_id: str):
+        return [
+            {sub_category['sub_category_id'] : sub_category['sub_category_title']} 
+            for category in self.all_category_lst 
+            for sub_category in category['sub_categories'] 
+            if category['category_id'] == main_category_id
+            ]
         
     def export_all_categories_json(self, json_name: str) -> None:
         with open(f'./json_data/{json_name}.json', 'w') as output_file:
@@ -174,8 +183,11 @@ class CityMallCategoryScraper:
         
 
 ## Testing code for category scraping
-category = CityMallCategoryScraper()
-category.export_all_categories_json('all_categories_March12')
+# category = CityMallCategoryScraper()
+# category.export_all_categories_json('all_categories_March12')
+# print(category.get_main_category_ids())
+# print("--x--")
+# print(category.get_sub_ids_under_main('MU_01_FR'))
 
 ## Testing Code for items scraping
 """
