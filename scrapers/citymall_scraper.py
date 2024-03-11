@@ -1,6 +1,8 @@
 from requests_html import HTMLSession
 from typing import List, Dict
 import json
+import re
+from random import randint
 
 en_cache_header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0',
              'Cookie' : '_citymallLanguageCookie=en'
@@ -111,6 +113,9 @@ class CityMallCategoryScraper:
         self.all_category_lst = []
         self.r = self.main_session.get(self.main_url)
         print(f"Scraping status for category url : {self.r.status_code}")
+        
+        ## Start scraping categories (main + sub)
+        self.scrape_main_category()
     
     def scrape_main_category(self) -> List[Dict]:
         
@@ -121,7 +126,14 @@ class CityMallCategoryScraper:
             category_dict = {
                 'category_title' : category.find(".text-center-xs-sm > p", first=True).text
             }
+            print(f"Scraping Main Category : {category_dict['category_title']}")
             category_dict['category_url'] = citymall_baseURL + category.find(".text-center-xs-sm > a", first=True).attrs['href']
+            if check_id := re.search(r"\/(\w+)$", category_dict['category_url']):
+                category_dict['category_id'] = check_id[1]
+            else:
+                ## one main category doesn't have correct url with digits, set as main-unknown 'MU000'
+                # print(f"Main category unknown url : {category_dict['category_url']}")
+                category_dict['category_id'] = f'MU_{randint(0,100):03d}_' + category_dict['category_title'][:2].upper()
             category_dict['sub_categories'] = self.scrape_sub_category(category)
             self.all_category_lst.append(category_dict)
         # print(f"All category length : {len(all_category_lst)}")
@@ -133,21 +145,30 @@ class CityMallCategoryScraper:
         ## find class 'row' > 'col-md-6' that contains sub-category information
         ## Element obj has xpath function to select instead of using 'find()'.
         sub_category_rows = category_box.xpath("//div[@class='row']/div[@class='col-md-6']")
-        if len(sub_category_rows) > 0 : ## to check length of contained sub-category
-            sub_category_lst = []
-            for sub_category in sub_category_rows:
-                sub_category_dict = {
-                    'sub_category_title' : sub_category.find('a', first=True).text
-                    }
-                sub_category_dict['sub_category_url'] = citymall_baseURL + sub_category.find('a', first=True).attrs['href']
-                sub_category_lst.append(sub_category_dict)
-            return sub_category_lst
-        else:
+        if len(sub_category_rows) <= 0 : ## to check length of contained sub-category
             # print("Sub-category list is being zero.")
             return []
+        sub_category_lst = []
+        for sub_category in sub_category_rows:
+            sub_category_dict = {
+                'sub_category_title' : sub_category.find('a', first=True).text
+                }
+            # print(f"Sub-category : {sub_category_dict['sub_category_title']}")
+            sub_category_dict['sub_category_url'] = citymall_baseURL + sub_category.find('a', first=True).attrs['href']
+            ## get the last digits from url - some urls can contains words
+            if check_sub_id := re.search(r"\/(\w+)$", sub_category_dict['sub_category_url']):
+                sub_category_dict['sub_category_id'] = check_sub_id[1]
+            else:
+                ## Unknown digits - set as sub-unknown 'SU000'
+                print(f"Unknown digits from sub {sub_category_dict['sub_category_title']} : {sub_category_dict['sub_category_url']}")
+                sub_category_dict['sub_category_id'] = f'SU_{randint(0,100):03d}_' + sub_category_dict['sub_category_title'][:2].upper()
+            sub_category_lst.append(sub_category_dict)
+        return sub_category_lst
     
+    def get_all_category_titles(self):
+        pass
+        
     def export_all_categories_json(self, json_name: str) -> None:
-        self.scrape_main_category()
         with open(f'./json_data/{json_name}.json', 'w') as output_file:
             json.dump(self.all_category_lst, output_file)
         
