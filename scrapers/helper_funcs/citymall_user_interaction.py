@@ -45,7 +45,7 @@ class CityMallUserInteraction:
         while self.selected_main not in main_ids:
             print("You should type the correct category ID from given list!")
             self.selected_main = input("Re-enter correct category ID >> ")
-        return True
+        return self.selected_main
     
     def ask_sub_category_input(self):
         if self.ask_main_input():
@@ -56,6 +56,44 @@ class CityMallUserInteraction:
             print("You should type the correct category ID from given list!")
             self.selected_sub = input("Re-enter correct sub-category ID")
         return self.selected_sub
+    
+    ## Ask user to select action from 3 Options
+    ## 1. Provide category_url to scrape - Need to check correct categorial url
+    ## 2. Select category from menu
+    ## 3. Scrape all - (shouldn't add before concurrency)
+    def show_main_menu(self) -> None:
+        print("Select number for below options. \
+            \n[1] Provide category url to scrape. \
+            \n[2] Select category from menu. \
+            \n[3] Scrape all projects data. (Do not recommend!)")
+    
+    def ask_option1(self) -> None:
+        print("Provide CORRECT category URL starting with https://....")
+        option1_input_url = input("Paste link here :: ")
+        
+        ## After validating url , if it's correct result , I should confirm with selected category name and ask to continue 'y/n'
+    
+    def main_input_validate(self) -> int:
+        try:
+            main_menu_input = int(input("Enter selected number 1-3 :: "))
+            if main_menu_input <= 0 and main_menu_input > 3:
+                raise ValueError("Your input number is being out of scope.")
+        except TypeError:
+            print("You've to type only number between 1 to 3. Retry again.")
+            self.main_input_validate()
+        except ValueError:
+            print("You've to select number between 1,2,3 options. Retry again.")
+            self.main_input_validate()
+        return main_menu_input
+
+    def main_menu_selection(self, selected_num : int):
+        if selected_num == 1:
+            self.ask_option1()
+            
+    def main_interaction(self):
+        self.show_main_menu()
+        main_user_input = self.main_input_validate()
+            
 
     
     

@@ -2,12 +2,13 @@ from requests_html import HTMLSession
 from typing import List, Dict
 import json
 import re
+from copy import deepcopy
+from constants import CITYMALL_BASEURL, CITYMALL_CATEGORYURL
 
-en_cache_header = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0',
-             'Cookie' : '_citymallLanguageCookie=en'
-             }
-
-citymall_baseURL = "https://www.citymall.com.mm"
+en_cache_header = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
+    "Cookie": "_citymallLanguageCookie=en",
+}
 
 class CityMallScraper:
     def __init__(self, url) -> None:
@@ -27,7 +28,7 @@ class CityMallScraper:
     def scrape_next_url(self):
         next_button = self.r.html.find('.page-link.next', first=True)
         if next_link := next_button.links:
-            return f"{citymall_baseURL + str(list(next_link)[0])}"
+            return f"{CITYMALL_BASEURL + str(list(next_link)[0])}"
         print(f"Next link not found : {next_button.attrs['href']}")
         return None
     
@@ -103,7 +104,7 @@ class CityMallScraper:
 
 class CityMallCategoryScraper:
     def __init__(self) -> None:
-        self.main_url = "https://www.citymall.com.mm/citymall/en/categories"
+        self.main_url = CITYMALL_CATEGORYURL
         self.main_session = HTMLSession()
         
         self.main_session.headers.update(
@@ -125,7 +126,7 @@ class CityMallCategoryScraper:
                 'category_title' : category.find(".text-center-xs-sm > p", first=True).text
             }
             # print(f"Scraping Main Category : {category_dict['category_title']}")
-            category_dict['category_url'] = citymall_baseURL + category.find(".text-center-xs-sm > a", first=True).attrs['href']
+            category_dict['category_url'] = CITYMALL_BASEURL + category.find(".text-center-xs-sm > a", first=True).attrs['href']
             if check_id := re.search(r"\/(\w+)$", category_dict['category_url']):
                 category_dict['category_id'] = check_id[1]
             else:
@@ -152,7 +153,7 @@ class CityMallCategoryScraper:
                 'sub_category_title' : sub_category.find('a', first=True).text
                 }
             # print(f"Sub-category : {sub_category_dict['sub_category_title']}")
-            sub_category_dict['sub_category_url'] = citymall_baseURL + sub_category.find('a', first=True).attrs['href']
+            sub_category_dict['sub_category_url'] = CITYMALL_BASEURL + sub_category.find('a', first=True).attrs['href']
             ## get the last digits from url - some urls can contains words
             if check_sub_id := re.search(r"\/(\w+)$", sub_category_dict['sub_category_url']):
                 sub_category_dict['sub_category_id'] = check_sub_id[1]
@@ -164,16 +165,24 @@ class CityMallCategoryScraper:
         return sub_category_lst
     
     def get_main_category_ids(self):
-        return [{category['category_id'] : category['category_title']} for category in self.all_category_lst]
+        ## Return main category dict without sub_categories list
+        all_category_copy = deepcopy(self.all_category_lst) ## If I did shallow copy here, pop action will also affect to the original.
+        for category in all_category_copy:
+            try:
+                category.pop('sub_categories')
+            except KeyError as e:
+                raise ValueError("sub_categories col isn't found") from e
+        return all_category_copy
     
     def get_all_sub_category_ids(self):
         return [{sub_category['sub_category_id'] : sub_category['sub_category_title']} for category in self.all_category_lst for sub_category in category['sub_categories']]
     
     def get_sub_ids_under_main(self, main_category_id: str):
+        ## Return list of dictionaries of specific sub_category
         return [
-            {sub_category['sub_category_id'] : sub_category['sub_category_title']} 
-            for category in self.all_category_lst 
-            for sub_category in category['sub_categories'] 
+            sub_category
+            for category in self.all_category_lst
+            for sub_category in category['sub_categories']
             if category['category_id'] == main_category_id
             ]
         
@@ -181,14 +190,6 @@ class CityMallCategoryScraper:
         with open(f'./json_data/{json_name}.json', 'w') as output_file:
             json.dump(self.all_category_lst, output_file)
         
-
-## Testing code for category scraping
-# category = CityMallCategoryScraper()
-# category.export_all_categories_json('all_categories_March12')
-# print(category.get_main_category_ids())
-# print("--x--")
-# print(category.get_sub_ids_under_main('MU_01_FR'))
-
 ## Testing Code for items scraping
 """
 url_test = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Grocery/c/11?q=%3Abestselling&page=95"
