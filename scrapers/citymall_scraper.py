@@ -23,6 +23,9 @@ class CityMallScraper:
         self.all_items_data = []    ## all items data will append into this list
         ## Scraping Initial url for one time
         self.r = self.session.get(self.url)
+        ## Show error if not get correct status
+        self.r.raise_for_status()
+        
         print(f"Scrape initial url : {self.url}")
     
     def scrape_next_url(self):

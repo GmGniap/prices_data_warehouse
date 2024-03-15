@@ -4,4 +4,4 @@ GREENWAY_DB = "greenway_db"
 
 ## CityMall constant URLs
 CITYMALL_BASEURL = "https://www.citymall.com.mm"
-CITYMALL_CATEGORYURL = "https://www.citymall.com.mm/citymall/en/categories"
+CITYMALL_CATEGORYURL = f"{CITYMALL_BASEURL}/citymall/en/categories/"
