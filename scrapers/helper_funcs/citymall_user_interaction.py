@@ -75,6 +75,7 @@ class CityMallUserInteraction:
         try:
             self.inputValidator.validate_category_url(option1_input_url)
             print(f"Start scraping for correct URL : {option1_input_url}")
+            return option1_input_url
         except ValueError as ve:
             print(f"Input URL doesn't look like correct. Error : {ve}")
             print("Retry to copy/paste correct URL!!")
@@ -98,7 +99,7 @@ class CityMallUserInteraction:
 
     def main_menu_selection(self, selected_num : int):
         if selected_num == 1:
-            self.ask_option1()
+            return self.ask_option1() ## Return correct url
         elif selected_num == 2:
             ## Need to get all main/sub categories list
             self.category_obj = CityMallCategoryScraper()
@@ -112,7 +113,7 @@ class CityMallUserInteraction:
     def main_interaction(self):
         self.show_main_menu()
         main_user_input = self.main_input_validate()
-        self.main_menu_selection(main_user_input)
+        return self.main_menu_selection(main_user_input) ## Return correct url
         
             
 

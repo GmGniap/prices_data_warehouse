@@ -1,7 +1,7 @@
 # from scrapers.wisarra_scraper import WisarraScraper
 # from scrapers.greenway_scraper import GreenWayScraper
 from scrapers.helper_funcs.citymall_user_interaction import CityMallUserInteraction
-from scrapers.citymall_scraper import CityMallCategoryScraper
+from scrapers.citymall_scraper import CityMallCategoryScraper, CityMallItemsScraper
 
 # scrapers_dict = {
 #     "wisarra": WisarraScraper().scrape_update_daily_data(),
@@ -15,10 +15,31 @@ from scrapers.citymall_scraper import CityMallCategoryScraper
 
 
 ### CityMall Scraping testing for functions
+## Testing Code for items scraping
 
+# url_test = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Grocery/c/11?q=%3Abestselling&page=95"
+
+
+## UI Testing
 citymall_ui = CityMallUserInteraction()
-# citymall_ui.ask_sub_category_input()
-citymall_ui.main_interaction()
+correct_url = citymall_ui.main_interaction()
+cm = CityMallItemsScraper(correct_url)
+
+break_count = 10
+## Test iterating
+print("Start iterating---")
+for count, i in enumerate(cm, start=1):
+    items = cm.scrape_all_items()
+    print(f"No. of items : {len(items)}")
+    print(f"Done scraping for count {count}\n")
+    if count == break_count:
+        break
+
+print("Finished!")
+print(items[:10])
+
+
+
 
 ## Testing code for CityMall category scraping
 # category = CityMallCategoryScraper()

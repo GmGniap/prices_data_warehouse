@@ -10,7 +10,7 @@ en_cache_header = {
     "Cookie": "_citymallLanguageCookie=en",
 }
 
-class CityMallScraper:
+class CityMallItemsScraper:
     def __init__(self, url) -> None:
         self.url = url
         # self.url = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Grocery/c/11"
@@ -25,8 +25,6 @@ class CityMallScraper:
         self.r = self.session.get(self.url)
         ## Show error if not get correct status
         self.r.raise_for_status()
-        
-        print(f"Scrape initial url : {self.url}")
     
     def scrape_next_url(self):
         next_button = self.r.html.find('.page-link.next', first=True)
@@ -43,7 +41,7 @@ class CityMallScraper:
         }
         if check_title := item.find('.product-title', first=True):
                 item_dict['product_name'] = check_title.find('.name', first=True).text
-                item_dict['product_url'] = check_title.find('a', first=True).attrs['href']
+                item_dict['product_url'] = CITYMALL_BASEURL + check_title.find('a', first=True).attrs['href']
             
         if check_price := item.find('.product-price.mt-1', first=True):
             ## if found two span elements , it will be promotional item
@@ -58,25 +56,25 @@ class CityMallScraper:
         
         if check_packaging := item.find('.product-packaging', first=True):
             item_dict['product_packaging'] = check_packaging.text
+        
+        ## current scraping url for each item? -> to get page number , category
+        item_dict['scraped_page_url'] = self.url
         return item_dict
     
     ## Scrape all items from one page, return List of Dictionaries
     def scrape_all_items(self):
         items = self.r.html.find('.col-xs-6.col-lg-2.col-md-4.col-sm-4.pt-2.gutter-2.p-1')
-        print(f"No. of items : {len(items)}")
         for item in items:
             item_data = self.scrape_item_data_as_dict(item)
-
-            ## current scraping url for each item? -> to get page number , category
             
-            ## another question : should I insert into db for each items instead of coverting to dataframe at the end
+            ## another question : should I insert into db for each items dict instead of coverting to dataframe at the end
             self.all_items_data.append(item_data)
         return self.all_items_data
     
     ## Iterate scrape function inside object using iter() and next() magic methods
     def iterate_scrape_func(self, update_url):
         self.r = self.session.get(update_url)
-        print(f"Main task : {update_url}")
+        print(f"Current Scraping URL : {update_url}")
         
     ## Only return iterable object (self)
     def __iter__(self):
@@ -115,8 +113,8 @@ class CityMallCategoryScraper:
         )
         self.all_category_lst = []
         self.r = self.main_session.get(self.main_url)
-        # print(f"Scraping status for category url : {self.r.status_code}") 
-        ## Start scraping categories (main + sub)
+        self.r.raise_for_status()
+        
         self.scrape_main_category()
     
     def scrape_main_category(self) -> List[Dict]:
@@ -193,19 +191,3 @@ class CityMallCategoryScraper:
         with open(f'./json_data/{json_name}.json', 'w') as output_file:
             json.dump(self.all_category_lst, output_file)
         
-## Testing Code for items scraping
-"""
-url_test = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Grocery/c/11?q=%3Abestselling&page=95"
-cm = CityMallScraper(url_test)
-# next_but = cm.scrape_next_url()
-# print(next_but)
-
-## Test iterating
-print("Start iterating---")
-for count, i in enumerate(cm, start=1):
-    items = cm.scrape_all_items()
-    print(len(items))
-    print(f"Done scraping for count {count}\n")
-print("Finished!")
-print(items[:10])
-"""
