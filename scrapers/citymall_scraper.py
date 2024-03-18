@@ -35,6 +35,7 @@ class CityMallItemsScraper:
     
     ## Scrape single item data - Need to check some items had special information (like promotion)
     def scrape_item_data_as_dict(self, item) -> dict:
+        
         ## find required data for each item
         item_dict = {
             'image_url' : item.find('.product.img-responsive', first=True).attrs['src']

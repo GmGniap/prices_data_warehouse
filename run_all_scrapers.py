@@ -2,7 +2,7 @@
 # from scrapers.greenway_scraper import GreenWayScraper
 from scrapers.helper_funcs.citymall_user_interaction import CityMallUserInteraction
 from scrapers.citymall_scraper import CityMallCategoryScraper, CityMallItemsScraper
-
+from scrapers.helper_funcs.export_utils import write_lstOfdicts_into_csv
 # scrapers_dict = {
 #     "wisarra": WisarraScraper().scrape_update_daily_data(),
 #     "greenway": GreenWayScraper().scrape_update_daily_data(),
@@ -20,23 +20,32 @@ from scrapers.citymall_scraper import CityMallCategoryScraper, CityMallItemsScra
 # url_test = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Grocery/c/11?q=%3Abestselling&page=95"
 
 
+field_names = ['image_url', 'product_name', 'product_url', 'product_price', 'product_sale_price',
+                'product_original_price', 'product_seller', 'product_packaging', 'scraped_page_url']
+
 ## UI Testing
 citymall_ui = CityMallUserInteraction()
 correct_url = citymall_ui.main_interaction()
 cm = CityMallItemsScraper(correct_url)
 
 break_count = 10
+total_items = []
 ## Test iterating
 print("Start iterating---")
 for count, i in enumerate(cm, start=1):
     items = cm.scrape_all_items()
+    
+    ## add one-page items into total
+    total_items += items 
     print(f"No. of items : {len(items)}")
-    print(f"Done scraping for count {count}\n")
+    print(f"Done scraping for page count {count}\n")
     if count == break_count:
         break
 
 print("Finished!")
-print(items[:10])
+print(len(total_items))
+print(total_items[0])
+write_lstOfdicts_into_csv(total_items, field_names)
 
 
 
