@@ -3,7 +3,10 @@ from typing import List, Dict
 import json
 import re
 from copy import deepcopy
-from config.constants import CITYMALL_BASEURL, CITYMALL_CATEGORYURL
+from config import SOURCES
+
+CITYMALL_BASEURL = SOURCES.get('citymall', {}).get('base_url')
+CITYMALL_CATEGORYURL = SOURCES.get('citymall', {}).get('category_url')
 
 en_cache_header = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
@@ -13,7 +16,6 @@ en_cache_header = {
 class CityMallItemsScraper:
     def __init__(self, url) -> None:
         self.url = url
-        # self.url = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Grocery/c/11"
         self.session = HTMLSession()
         
         ## Need to add cookie to set lang = en. If not, default will auto return MM url.

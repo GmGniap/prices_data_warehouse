@@ -1,7 +1,8 @@
 ## Do I need to write custom error for not able to access URL with requests
 
 import re
-from config.constants import CITYMALL_CATEGORYURL
+from config import SOURCES
+CITYMALL_CATEGORYURL = SOURCES.get('citymall', {}).get('category_url', 'https://www.citymall.com.mm/citymall/en/categories/')
 class CityMallInputValidation:
     '''
     To validate user input data to be correct form.

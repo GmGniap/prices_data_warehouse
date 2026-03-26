@@ -7,23 +7,26 @@ from scrapers.helper import TokenBucket, retry_with_backoff
 from api_app.db_manager import DbManager
 from requests_html import HTMLSession
 from datetime import datetime
-from config.constants import WISARRA_DB
+from config import SOURCES
 from typing import Optional
+
+WISARRA_DB = SOURCES.get('wisarra', {}).get('db_name', 'wisarra_db_2026')
 
 ## Need to ignore ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class WisarraScraper:
-    def __init__(self):
+    def __init__(self, db_manager=None):
         self.count_page = 0
         self.all_pages_data = []
         self.bucket = TokenBucket(rate=1.0, capacity=1.0)
         print("Scraping Wisarra task started.")
-        self.dbManager = DbManager()
+        self.dbManager = db_manager if db_manager else DbManager()
 
     def update_url(self, page_num):
-        return f"https://wisarra.com/en/market-price?page={page_num}"
+        base_url = SOURCES.get('wisarra', {}).get('base_url')
+        return f"{base_url}?page={page_num}"
 
     def get_total_rows(self, df: pd.DataFrame) -> int:
         return df.shape[0]
