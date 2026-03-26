@@ -93,13 +93,17 @@ class GreenWayScraper(Scraper):
                 # self.dbManager.insert_batch("greenway_db", data)
                 print(f"Insert here! {data}")
                 summary["status"] = "success"
+                self.dbManager.insert_batch("summary", [summary])
+                return True
             else:
                 summary["status"] = "no-data"
                 print("Result data from specific date is being None")
-            self.dbManager.insert_batch("summary", [summary])
+                self.dbManager.insert_batch("summary", [summary])
+                return False
         except ValueError as e:
             print(f"VE : {e}")
             summary["status"] = "fail"
+            return False
 
     def get_lastRowData_from_db(self):
         """

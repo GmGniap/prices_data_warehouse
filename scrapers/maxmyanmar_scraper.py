@@ -23,16 +23,17 @@ class MaxMyanmarScraper:
 
     def scrape_update_daily_data(self):
         t = datetime.today().date()
-        base_url = SOURCES.get('max', {}).get('base_url', 'https://app.maxenergy.com.mm/maxapi/webapi/Price/GetPriceList')
+        base_url = SOURCES.get('max').get('base_url')
         
         payload = json.dumps({
-            "apikey": "R2wwQjRBdTFIbUY4OUFXRTZpbWZuYzhtVkxXd3NBYXdqWXI0Unh6YUNFTGdM",
+            "apikey": SOURCES.get('max').get('api_key'),
             "fromdate": f"{t} 12:00:00 AM",
             "todate": f"{t} 11:00:00 PM"
         })
         headers = {
             'content-type': 'application/json',
-            'Cookie': '.AspNetCore.Session=CfDJ8B0ta%2BbvQ0RLgbpaxcGdndgbCvK8BQSCNXPXosRd%2BsHPqTu3gVO7Z%2FTID1K2qyncCqw53HbvlUzTyAVYixfNnnZgMYT2siiOV1L0gzKGdYEe%2BYMldYcAlsYqWyohDi4g8t3Y49A%2FKGPoF4BHk1179zRtsuFT6ujfa6Zg8J%2Fxtzeg'
+            'Cookie': SOURCES.get('max').get('cookie')
+            # 'Cookie': '.AspNetCore.Session=CfDJ8B0ta%2BbvQ0RLgbpaxcGdndgbCvK8BQSCNXPXosRd%2BsHPqTu3gVO7Z%2FTID1K2qyncCqw53HbvlUzTyAVYixfNnnZgMYT2siiOV1L0gzKGdYEe%2BYMldYcAlsYqWyohDi4g8t3Y49A%2FKGPoF4BHk1179zRtsuFT6ujfa6Zg8J%2Fxtzeg'
         }
 
         print(f"Scraping MaxMyanmar for date: {t}")
@@ -41,7 +42,7 @@ class MaxMyanmarScraper:
         
         if not raw_data:
             print("No data received from MaxMyanmar API today.")
-            return
+            return False
 
         raw_df = pd.json_normalize(raw_data)
         clean_df = raw_df[raw_df['price'] != 0.0].reset_index(drop=True)
@@ -54,3 +55,4 @@ class MaxMyanmarScraper:
         engine = self.dbManager.get_engine()
         clean_df.to_sql(MAX_DB, engine, if_exists="append", index=False)
         print("MaxMyanmar scraping and insertion forcefully completed.")
+        return True

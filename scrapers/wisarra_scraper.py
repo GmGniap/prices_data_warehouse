@@ -125,7 +125,8 @@ class WisarraScraper:
                 WISARRA_DB , engine, if_exists="append", index=False, method="multi", chunksize=50
             )
             print("Finish insertion.")
-            return 200
+            return True
         else:
             print("Wisarra scraped result return None")
+            return False
             raise ValueError("Result is none")
