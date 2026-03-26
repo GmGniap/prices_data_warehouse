@@ -7,6 +7,6 @@ requests
 pandas
 beautifulsoup4
 dbt-postgres
-lxml
+lxml[html_clean]
 html5lib
 requests-html
