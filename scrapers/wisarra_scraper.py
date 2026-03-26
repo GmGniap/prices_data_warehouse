@@ -1,7 +1,9 @@
 import pandas as pd
 import ssl
+import requests
+import time
+from scrapers.helper import TokenBucket, retry_with_backoff
 from api_app.db_manager import DbManager
-import numpy as np
 from requests_html import HTMLSession
 from datetime import datetime
 from constants import WISARRA_DB
@@ -14,6 +16,7 @@ class WisarraScraper:
     def __init__(self):
         self.count_page = 0
         self.all_pages_data = []
+        self.bucket = TokenBucket(rate=1.0, capacity=1.0)
         print("Scraping Wisarra task started.")
         self.dbManager = DbManager()
 
@@ -35,9 +38,17 @@ class WisarraScraper:
         print("Not found date")
         return None
 
+    @retry_with_backoff(max_retries=3, base_delay=2)
     def get_single_data(self, page_num):
         url = self.update_url(page_num)
-        data = pd.read_html(url)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        }
+        self.bucket.consume()
+        r = requests.get(url, headers=headers, timeout=10)
+        r.raise_for_status()
+        data = pd.read_html(r.text)
+        
         if len(data) == 1:
             if self.get_total_rows(data[0]) > 1:
                 self.all_pages_data += data
@@ -51,13 +62,17 @@ class WisarraScraper:
 
     def get_all_data_from_single_date(self) -> pd.DataFrame | None:
         try:
-            impossible_pages = 100
-            for page_num in range(impossible_pages):
+            page_num = 1
+            while True:
                 print(f"Scraping Wisarra page: {page_num}")
-                self.get_single_data(page_num)
+                try:
+                    self.get_single_data(page_num)
+                except ValueError as ve:
+                    print(f"Stopping pagination at page {page_num}. Reason: {ve}")
+                    break
                 self.count_page += 1
-        except ValueError:
-            print(ValueError)
+                page_num += 1
+                time.sleep(1)  ## Add rate limiting delay between pages
         except Exception as e:
             print(f"Other error : {e}")
         finally:

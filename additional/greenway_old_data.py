@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 from api_app.db_manager import DbManager
 from api_app.models import GreenWay
-from scrapers.greenway_scraper import get_data_from_specific_date
+from scrapers.greenway_scraper import GreenWayScraper
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from tqdm import tqdm
@@ -9,8 +9,9 @@ from tqdm import tqdm
 
 def get_data_and_update_postgres(selected_date, dbManager):
     try:
+        scraper = GreenWayScraper()
         ## Scrape data for specific date
-        data, summary = get_data_from_specific_date(selected_date)
+        data, summary = scraper.get_data_from_specific_date(selected_date)
 
         ## summary is being heavy dependent on scraper script
         summary["dataset_name"] = "Green Way Myanmar"
@@ -39,15 +40,14 @@ def sample_read_data(db):
         print(data)
         print(vars(data))
 
-
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(n)
 
-
 def scrape_historical_data(dbManager):
     ## Selected start date - 2016-03-16 - to get historical data
-    start_date = date(2016, 3, 1)
+    # start_date = date(2016, 3, 1)     ## initial date - beginning of the website
+    start_date = date(2023, 12, 26)     ## Jul 10 scraping modification - ID starts from 645639
     today_date = datetime.now().date()
     for daily in tqdm(daterange(start_date, today_date)):
         try:
@@ -65,7 +65,6 @@ def main():
 
     scrape_historical_data(dbManager)
     print("Successfully finished!")
-
 
 if __name__ == "__main__":
     main()

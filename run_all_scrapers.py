@@ -1,62 +1,39 @@
-# from scrapers.wisarra_scraper import WisarraScraper
-# from scrapers.greenway_scraper import GreenWayScraper
-from scrapers.helper_funcs.citymall_user_interaction import CityMallUserInteraction
-from scrapers.citymall_scraper import CityMallCategoryScraper, CityMallItemsScraper
-from scrapers.helper_funcs.export_utils import write_lstOfdicts_into_csv
-# scrapers_dict = {
-#     "wisarra": WisarraScraper().scrape_update_daily_data(),
-#     "greenway": GreenWayScraper().scrape_update_daily_data(),
-# }
+from scrapers.wisarra_scraper import WisarraScraper
+from scrapers.greenway_scraper import GreenWayScraper
+from api_app.db_manager import DbManager
+from api_app.models import WatermarkLog
+from datetime import datetime
 
-# g = GreenWayScraper().get_lastRowData_from_db()
+if __name__ == "__main__":
+    print("Starting daily scraping tasks...")
+    success = True
 
-# t = WisarraScraper().scrape_date()
-# print(t)
+    try:
+        print("Running GreenWay Scraper...")
+        g_status = GreenWayScraper().scrape_update_daily_data()
+        print(f"GreenWay scraping complete.")
+    except Exception as e:
+        print(f"Error running GreenWay Scraper: {e}")
+        success = False
 
+    try:
+        print("Running Wisarra Scraper...")
+        w_status = WisarraScraper().scrape_update_daily_data()
+        print(f"Wisarra scraping complete. Status: {w_status}")
+    except Exception as e:
+        print(f"Error running Wisarra Scraper: {e}")
+        success = False
 
-### CityMall Scraping testing for functions
-## Testing Code for items scraping
-
-# url_test = "https://www.citymall.com.mm/citymall/en/Categories/Grocery/Basic-Grocery/c/11?q=%3Abestselling&page=95"
-
-
-field_names = ['image_url', 'product_name', 'product_url', 'product_price', 'product_sale_price',
-                'product_original_price', 'product_seller', 'product_packaging', 'scraped_page_url']
-
-## UI Testing
-citymall_ui = CityMallUserInteraction()
-correct_url = citymall_ui.main_interaction()
-cm = CityMallItemsScraper(correct_url)
-
-break_count = 10
-total_items = []
-## Test iterating
-print("Start iterating---")
-for count, i in enumerate(cm, start=1):
-    items = cm.scrape_all_items()
-    
-    ## add one-page items into total
-    total_items += items 
-    print(f"No. of items : {len(items)}")
-    print(f"Done scraping for page count {count}\n")
-    if count == break_count:
-        break
-
-print("Finished!")
-print(len(total_items))
-print(total_items[0])
-write_lstOfdicts_into_csv(total_items, field_names)
-
-
-
-
-## Testing code for CityMall category scraping
-# category = CityMallCategoryScraper()
-# category.export_all_categories_json('all_categories_March12')
-
-## Test category list
-# print(category.get_main_category_ids()[2:5])
-# print("--x--")
-# print(category.get_sub_ids_under_main('MU_01_FR'))
-# print("--x--")
-# print(category.get_sub_ids_under_main('11'))
+    if success:
+        print("All scraping tasks finished successfully. Writing watermark...")
+        try:
+            db = DbManager()
+            with db.SessionLocal() as session:
+                watermark = WatermarkLog(run_date=datetime.now(), status="SUCCESS")
+                session.add(watermark)
+                session.commit()
+            print("Watermark saved successfully.")
+        except Exception as e:
+            print(f"Failed to write watermark log: {e}")
+    else:
+        print("Scraping tasks finished with errors. Watermark not written.")

@@ -1,7 +1,9 @@
 import requests
+import time
 import pandas as pd
 from datetime import date, datetime, timedelta
 from typing import List, Dict
+from scrapers.helper import TokenBucket, retry_with_backoff
 from api_app.db_manager import DbManager
 from . import Scraper
 from api_app.models import GreenWay
@@ -15,15 +17,21 @@ class GreenWayScraper(Scraper):
         self.pagination_info = None
         self.data = None
         self.today_date = datetime.now().date().strftime("%Y-%m-%d")
+        self.bucket = TokenBucket(rate=1.0, capacity=1.0)
         print("GreenWay Scraper started!")
-        
+
     def update_url(self, page_number, selected_date):
         return f"https://greenwaymyanmar.com/api/web/market-price?page={page_number}&tab_date={selected_date}"
 
+    @retry_with_backoff(max_retries=3, base_delay=2)
     def get_single_page_data(self, url):
-        r = requests.get(url)
+        self.bucket.consume()
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        }
+        r = requests.get(url, headers=headers, timeout=10)
         if r.status_code != 200:
-            raise requests.ConnectionError()
+            raise requests.ConnectionError(f"Status code {r.status_code}")
         if self.pagination_info is None:
             self.pagination_info = r.json()["pagination"]
         self.data = r.json()["data"]
@@ -31,23 +39,30 @@ class GreenWayScraper(Scraper):
 
     def get_data_from_specific_date(self, selected_date: str):
         all_pages_data = []
-        ## page number should be start from 1 , even though page 1 is the same as page 0
-        pg_num = 1
-        last_page_no = 1000  ## init impossible number that used to enter while loop
 
-        while pg_num < last_page_no + 1:
+        # Fetch first page to initialize pagination info
+        first_url = self.update_url(1, selected_date)
+        self.get_single_page_data(first_url)
+        
+        if self.pagination_info["total"] == 0:
+            print(f"Total is being zero : {self.pagination_info['total']}")
+            return None, {}
+            
+        all_pages_data += self.data
+        last_page_no = int(self.pagination_info["last_page"])
+        last_scraped_url = first_url
+
+        # Fetch subsequent pages cleanly safely up to last_page
+        for pg_num in range(2, last_page_no + 1):
             daily_price_url = self.update_url(pg_num, selected_date)
             self.get_single_page_data(daily_price_url)
-            if self.pagination_info["total"] == 0:
-                print(f"Total is being zero : {self.pagination_info['total']}")
-                return None, {}
-            last_page_no = int(self.pagination_info["last_page"])
+
             if len(self.data) > 0:
                 all_pages_data += self.data
             else:
                 print("Single Page data is being None")
                 raise ValueError("Data is none")
-            pg_num += 1
+            last_scraped_url = daily_price_url
 
         if len(all_pages_data) != int(self.pagination_info["total"]):
             ## Should add to Logging
@@ -86,7 +101,7 @@ class GreenWayScraper(Scraper):
         Get the last row (with max id number) and covert to dictionary
         """
         engine = self.dbManager.get_engine()
-        
+
         # sub_query = select(func.max(GreenWay.id)).scalar_subquery() #  scalar
         sub_query = select(func.max(GreenWay.id)).subquery() ## with normal execute
         # print(sub_query)
@@ -97,13 +112,8 @@ class GreenWayScraper(Scraper):
 
             ## convert to dict
             return data._asdict()['GreenWay'].convert_dict()
-            
-            
-            
-            # print(vars(data))
-    
+
+
     def validate_before_update(self):
         ## get & compare with today scraped data - first row
         pass
-        
-        
