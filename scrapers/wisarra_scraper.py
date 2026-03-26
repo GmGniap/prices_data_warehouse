@@ -2,11 +2,13 @@ import pandas as pd
 import ssl
 import requests
 import time
+import re
 from scrapers.helper import TokenBucket, retry_with_backoff
 from api_app.db_manager import DbManager
 from requests_html import HTMLSession
 from datetime import datetime
-from constants import WISARRA_DB
+from config.constants import WISARRA_DB
+from typing import Optional
 
 ## Need to ignore ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -33,8 +35,15 @@ class WisarraScraper:
         # find_class = r.html.find("span.container pageContent", first=True)
         if find_class := r.html.xpath("//div[@class='pageContentCon']/div[@class='container pageContent']/*/following::span[1]"):
             page_date = find_class[0].text
-            formatted_date = datetime.strptime(page_date, '%B %d, %Y')
-            return formatted_date
+            ## Example : March 26 , 2026 (or) March 26, 2026.
+            match = re.search(r"([A-Za-z]+)\s+(\d{1,2})\s*,\s*(\d{4})", page_date)
+            if match:
+                clean_date_str = f"{match.group(1)} {match.group(2)}, {match.group(3)}"
+                formatted_date = datetime.strptime(clean_date_str, '%B %d, %Y')
+                return formatted_date
+            else:
+                print(f"Date format not matched: {page_date}")
+                return None
         print("Not found date")
         return None
 
@@ -60,7 +69,7 @@ class WisarraScraper:
         else:
             raise ValueError("Table not found!")
 
-    def get_all_data_from_single_date(self) -> pd.DataFrame | None:
+    def get_all_data_from_single_date(self) -> Optional[pd.DataFrame]:
         try:
             page_num = 1
             while True:
@@ -110,7 +119,7 @@ class WisarraScraper:
             ## Update to Postgresql
             engine = self.dbManager.get_engine()
             wisarra.to_sql(
-                WISARRA_DB , engine, if_exists="append", index=False, method="multi"
+                WISARRA_DB , engine, if_exists="append", index=False, method="multi", chunksize=50
             )
             print("Finish insertion.")
             return 200

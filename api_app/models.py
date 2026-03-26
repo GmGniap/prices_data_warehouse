@@ -2,7 +2,7 @@ from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 
 from datetime import datetime
-from constants import GREENWAY_DB, WISARRA_DB
+from config.constants import GREENWAY_DB, WISARRA_DB
 
 class Base(DeclarativeBase):
     pass

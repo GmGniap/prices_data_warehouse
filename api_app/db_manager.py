@@ -1,3 +1,8 @@
+import sys
+import os
+# Add the project root to sys.path so the 'config' module is visible when the script is run directly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from config import Config
 from typing import Any, List
 from sqlalchemy import column, select, insert, text
@@ -48,3 +53,14 @@ class DbManager:
             )
             session.commit()
         print(f"Insert done for {table_name}!")
+
+if __name__ == "__main__":
+    try:
+        safe_uri = c.SQLALCHEMY_DATABASE_URI.split('@')[-1] if '@' in c.SQLALCHEMY_DATABASE_URI else c.SQLALCHEMY_DATABASE_URI
+        print(f"Attempting to connect to the database engine: {safe_uri}")
+        db = DbManager()
+        with db.engine.connect() as connection:
+            print("Successfully connected to the database and initialized tables!")
+    except Exception as e:
+        print("Failed to connect or initialize the database.")
+        print(f"Error details: {e}")

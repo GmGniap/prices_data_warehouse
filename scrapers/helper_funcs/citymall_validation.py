@@ -1,7 +1,7 @@
 ## Do I need to write custom error for not able to access URL with requests
 
 import re
-from constants import CITYMALL_CATEGORYURL
+from config.constants import CITYMALL_CATEGORYURL
 class CityMallInputValidation:
     '''
     To validate user input data to be correct form.
