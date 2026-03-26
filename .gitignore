@@ -5,6 +5,7 @@
 *.twbx
 *.xlsx
 *.xml
+*.db
 
 *.DS_Store
 airflow.sh 

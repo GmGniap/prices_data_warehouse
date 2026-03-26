@@ -61,3 +61,10 @@ class Wisarra(Base):
     @classmethod
     def get_by_id(cls, dbsession, filter_id):
         return dbsession.query(cls).filter(cls.id == filter_id).scalar()
+
+
+class WatermarkLog(Base):
+    __tablename__ = "watermark_log"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_date: Mapped[datetime] = mapped_column(DateTime)
+    status: Mapped[str] = mapped_column(String, nullable=False)
