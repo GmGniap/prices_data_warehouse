@@ -1,8 +1,6 @@
 name: Daily Prices Scraper
 
 on:
-  schedule:
-    - cron: '0 2 * * *'  # Runs every day at 2:00 AM UTC
   workflow_dispatch:      # Allows manual trigger
 
 jobs:
@@ -30,5 +28,6 @@ jobs:
         # Assuming there might be a remote database. If the DB is local SQLite, it will just save the file.
         # But this ensures the variable is available if needed by db_manager.py
         SQLALCHEMY_DATABASE_URI: ${{ secrets.SQLALCHEMY_DATABASE_URI }}
+        SOURCE_CONFIG_JSON: ${{ secrets.SOURCE_CONFIG_JSON }}
       run: |
         python run_all_scrapers.py

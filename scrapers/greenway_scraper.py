@@ -5,6 +5,10 @@ from datetime import date, datetime, timedelta
 from typing import List, Dict
 from scrapers.helper import TokenBucket, retry_with_backoff
 from api_app.db_manager import DbManager
+from bs4 import BeautifulSoup
+from config import SOURCES
+
+GREENWAY_DB = SOURCES.get('greenway', {}).get('db_name', 'greenway_db_2026')
 from . import Scraper
 from api_app.models import GreenWay
 from sqlalchemy import select
@@ -12,8 +16,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import func
 
 class GreenWayScraper(Scraper):
-    def __init__(self):
-        self.dbManager = DbManager()
+    def __init__(self, db_manager=None):
+        self.dbManager = db_manager if db_manager else DbManager()
         self.pagination_info = None
         self.data = None
         self.today_date = datetime.now().date().strftime("%Y-%m-%d")
@@ -21,7 +25,8 @@ class GreenWayScraper(Scraper):
         print("GreenWay Scraper started!")
 
     def update_url(self, page_number, selected_date):
-        return f"https://greenwaymyanmar.com/api/web/market-price?page={page_number}&tab_date={selected_date}"
+        base_url = SOURCES.get('greenway', {}).get('base_url')
+        return f"{base_url}?page={page_number}&tab_date={selected_date}"
 
     @retry_with_backoff(max_retries=3, base_delay=2)
     def get_single_page_data(self, url):

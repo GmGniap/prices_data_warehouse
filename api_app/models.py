@@ -2,13 +2,13 @@ from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 
 from datetime import datetime
-from config.constants import GREENWAY_DB, WISARRA_DB
+from config import SOURCES
 
 class Base(DeclarativeBase):
     pass
 
 class GreenWay(Base):
-    __tablename__ = GREENWAY_DB
+    __tablename__ = SOURCES.get('greenway', {}).get('db_name', 'greenway_db_2026')
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime)
     crop: Mapped[str] = mapped_column(String, nullable=False)
@@ -45,7 +45,7 @@ class SummaryInfo(Base):
 
 
 class Wisarra(Base):
-    __tablename__ = WISARRA_DB
+    __tablename__ = SOURCES.get('wisarra', {}).get('db_name', 'wisarra_db_2026')
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str]
     location: Mapped[str]
@@ -66,5 +66,19 @@ class Wisarra(Base):
 class WatermarkLog(Base):
     __tablename__ = "watermark_log"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    source: Mapped[str] = mapped_column(String, nullable=False)
     run_date: Mapped[datetime] = mapped_column(DateTime)
     status: Mapped[str] = mapped_column(String, nullable=False)
+
+class MaxMyanmar(Base):
+    __tablename__ = SOURCES.get('max', {}).get('db_name', 'max_db_2026')
+    index_label: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    gradename: Mapped[str] = mapped_column(String, nullable=True)
+    regionid: Mapped[int] = mapped_column(Integer, nullable=True)
+    stationid: Mapped[int] = mapped_column(Integer, nullable=True)
+    station_code: Mapped[str] = mapped_column(String, nullable=True)
+    effectivedate: Mapped[str] = mapped_column(String, nullable=True)
+    pretransactiondate: Mapped[str] = mapped_column(String, nullable=True)
+    price: Mapped[float] = mapped_column(Integer, nullable=True)
+    transactiondate: Mapped[str] = mapped_column(String, nullable=True)
+    scraping_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
