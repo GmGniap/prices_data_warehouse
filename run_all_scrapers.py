@@ -52,9 +52,12 @@ if __name__ == "__main__":
             else:
                 try:
                     print("Running GreenWay Scraper...")
-                    GreenWayScraper(db_manager=db).scrape_update_daily_data()
-                    print("GreenWay scraping complete.")
-                    log_watermark(session, "greenway", "SUCCESS")
+                    is_scraped = GreenWayScraper(db_manager=db).scrape_update_daily_data()
+                    if is_scraped:
+                        print("GreenWay scraping complete.")
+                        log_watermark(session, "greenway", "SUCCESS")
+                    else:
+                        print("GreenWay returned no data. Watermark not updated.")
                 except Exception as e:
                     print(f"Error running GreenWay Scraper: {e}")
                     log_watermark(session, "greenway", "FAILED")
@@ -66,9 +69,12 @@ if __name__ == "__main__":
             else:
                 try:
                     print("Running Wisarra Scraper...")
-                    WisarraScraper(db_manager=db).scrape_update_daily_data()
-                    print("Wisarra scraping complete.")
-                    log_watermark(session, "wisarra", "SUCCESS")
+                    is_scraped = WisarraScraper(db_manager=db).scrape_update_daily_data()
+                    if is_scraped:
+                        print("Wisarra scraping complete.")
+                        log_watermark(session, "wisarra", "SUCCESS")
+                    else:
+                        print("Wisarra returned no data. Watermark not updated.")
                 except Exception as e:
                     print(f"Error running Wisarra Scraper: {e}")
                     log_watermark(session, "wisarra", "FAILED")
@@ -80,9 +86,12 @@ if __name__ == "__main__":
             else:
                 try:
                     print("Running MaxMyanmar Scraper...")
-                    MaxMyanmarScraper(db_manager=db).scrape_update_daily_data()
-                    print("MaxMyanmar scraping complete.")
-                    log_watermark(session, "max", "SUCCESS")
+                    is_scraped = MaxMyanmarScraper(db_manager=db).scrape_update_daily_data()
+                    if is_scraped:
+                        print("MaxMyanmar scraping complete.")
+                        log_watermark(session, "max", "SUCCESS")
+                    else:
+                        print("MaxMyanmar returned no data. Watermark not updated.")
                 except Exception as e:
                     print(f"Error running MaxMyanmar Scraper: {e}")
                     log_watermark(session, "max", "FAILED")
