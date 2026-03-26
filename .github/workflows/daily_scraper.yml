@@ -29,6 +29,6 @@ jobs:
       env:
         # Assuming there might be a remote database. If the DB is local SQLite, it will just save the file.
         # But this ensures the variable is available if needed by db_manager.py
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        SQLALCHEMY_DATABASE_URI: ${{ secrets.SQLALCHEMY_DATABASE_URI }}
       run: |
         python run_all_scrapers.py

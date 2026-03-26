@@ -3,7 +3,7 @@ from typing import List, Dict
 import json
 import re
 from copy import deepcopy
-from constants import CITYMALL_BASEURL, CITYMALL_CATEGORYURL
+from config.constants import CITYMALL_BASEURL, CITYMALL_CATEGORYURL
 
 en_cache_header = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
